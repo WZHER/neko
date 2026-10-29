@@ -1,0 +1,873 @@
+<div id="neko-planner">
+  <h2 class="np-title">我的喵 · 配装模拟器</h2>
+  <p class="np-small np-muted np-source">数据来自 fuun.fun 公开接口与前端源码（2026-10-29），数值以游戏内为准。每只猫的配装自动保存在本浏览器。</p>
+
+  <div class="np-rarity" role="group" aria-label="选择稀有度" id="np-rarity"></div>
+
+  <div class="np-grid">
+    <section class="np-left" aria-label="小猫与属性">
+      <div class="np-card">
+      <div class="np-thumbs" role="group" aria-label="选择小猫" id="np-thumbs"></div>
+      <div class="np-preview">
+        <img id="np-cat-img" alt="" width="96" height="96">
+        <div class="np-cat-info">
+          <div class="np-cat-line"><strong id="np-cat-name"></strong> <span class="np-badge" id="np-cat-rarity"></span></div>
+          <div class="np-small np-muted" id="np-cat-meta"></div>
+        </div>
+      </div>
+      <table class="np-table np-attrs">
+        <tbody id="np-stat-tbody"></tbody>
+      </table>
+      </div>
+
+      <div class="np-card">
+        <h3>FUN 消耗统计</h3>
+        <table class="np-table">
+          <tbody>
+            <tr><td>解锁小喵</td><td class="np-end np-num" id="np-fun-unlock">0</td></tr>
+            <tr><td>升级至当前等级</td><td class="np-end np-num" id="np-fun-level">0</td></tr>
+            <tr><td>购买装备</td><td class="np-end np-num" id="np-fun-buy">0</td></tr>
+            <tr><td>装备强化至当前等级</td><td class="np-end np-num" id="np-fun-enh">0</td></tr>
+            <tr><td class="np-strong">合计</td><td class="np-end np-num np-strong" id="np-fun-total">0</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="np-right" aria-label="培养与装备">
+      <div class="np-card">
+        <h3>等级</h3>
+        <div class="np-ctl-row">
+          <span class="np-label" id="np-level-label">等级</span>
+          <span class="np-num np-strong" id="np-level-val">Lv.1</span>
+        </div>
+        <input type="range" class="np-range" id="np-level" min="1" max="99" value="1" aria-labelledby="np-level-label">
+        <div class="np-small np-muted">每级 +3 待分配点数、暴击率 +0.3%；升级累计 <span class="np-num" id="np-level-fun">0</span> FUN</div>
+      </div>
+
+      <div class="np-card">
+        <h3>点数分配</h3>
+        <div class="np-pts-head">剩余待分配 <strong class="np-num" id="np-pts-rem">0</strong> 点</div>
+        <div id="np-pts-rows"></div>
+        <div class="np-ctl-row">
+          <button type="button" class="np-btn np-btn-sm" id="np-wash">洗点（全部收回）</button>
+          <span class="np-small np-muted" id="np-wash-cost">费用 0 FUN · 7 天 1 次 · 需空闲</span>
+        </div>
+      </div>
+
+      <div class="np-card">
+        <h3>装备（最多 4 件）</h3>
+        <div id="np-gear-rows"></div>
+      </div>
+
+      <div class="np-card np-manuals" aria-disabled="true">
+        <h3>喵诀 <span class="np-badge np-badge-off">暂未上线</span></h3>
+        <div id="np-manual-rows" class="np-manual-list"></div>
+      </div>
+    </section>
+  </div>
+
+  <section class="np-card np-reverse" aria-label="战报反推器">
+    <h3>战报反推器</h3>
+    <div class="np-small np-muted">从对战报告抄数字进来，逐条添加并标类型，点「开始分析」推对方大概的属性。我方攻/防自动取自上方当前配装。普通伤害必填（同场应相同，多种 = 有插曲，取出现最多的）；暴击/追打可选，没有会自动跳过。选了战斗结果时，需要录入全场全部伤害，生命估计与自检才准确。</div>
+    <div class="np-ctl-row" style="margin-top:8px">
+      <span class="np-label" id="np-rv-rarity-label">对方稀有度</span>
+      <select class="np-select np-sel-inline" id="np-rv-rarity" aria-labelledby="np-rv-rarity-label"></select>
+      <span class="np-label" id="np-rv-level-label">对方等级</span>
+      <input type="number" class="np-input np-rv-level" id="np-rv-level" min="1" max="99" value="30" aria-labelledby="np-rv-level-label">
+      <span class="np-label" id="np-rv-result-label">战斗结果</span>
+      <select class="np-select np-sel-inline" id="np-rv-result" aria-labelledby="np-rv-result-label">
+        <option value="none">不完整 / 没打完</option>
+        <option value="oppDead">对方被击败</option>
+        <option value="meDead">我被击败</option>
+      </select>
+    </div>
+    <div class="np-rv-grid">
+      <div>
+        <div class="np-rv-title">对方 → 我（推对方攻击、暴伤、鱼骨刺）</div>
+        <div class="np-ctl-row">
+          <input type="number" class="np-input np-rv-num" id="np-rv-a-num" min="1" placeholder="伤害" aria-label="对方对我造成的伤害">
+          <select class="np-select" id="np-rv-a-type" aria-label="伤害类型">
+            <option value="normal">普通</option>
+            <option value="crit">暴击</option>
+            <option value="extra">追打</option>
+          </select>
+          <button type="button" class="np-btn np-btn-sm" id="np-rv-a-add">添加</button>
+        </div>
+        <div class="np-rv-chips" id="np-rv-a-list"></div>
+      </div>
+      <div>
+        <div class="np-rv-title">我 → 对方（推对方防御、生命）</div>
+        <div class="np-ctl-row">
+          <input type="number" class="np-input np-rv-num" id="np-rv-d-num" min="1" placeholder="伤害" aria-label="我对对方造成的伤害">
+          <select class="np-select" id="np-rv-d-type" aria-label="伤害类型">
+            <option value="normal">普通</option>
+            <option value="crit">暴击</option>
+            <option value="extra">追打</option>
+          </select>
+          <button type="button" class="np-btn np-btn-sm" id="np-rv-d-add">添加</button>
+        </div>
+        <div class="np-rv-chips" id="np-rv-d-list"></div>
+      </div>
+    </div>
+    <div class="np-rv-title" style="margin-top:10px">本场触发的插曲（可选，勾选后分析会自动解释数值异常）</div>
+    <div class="np-rv-chips" id="np-rv-events"></div>
+    <div class="np-rv-out" id="np-rv-out" aria-live="polite"></div>
+    <div class="np-ctl-row" style="margin-top:8px">
+      <button type="button" class="np-btn np-btn-primary" id="np-rv-run">开始分析</button>
+      <button type="button" class="np-btn np-btn-sm" id="np-rv-clear">清空记录</button>
+      <span class="np-small np-muted">普通必填，暴击/追打可选；生命区间与自检需要全场全部伤害</span>
+    </div>
+  </section>
+</div>
+
+<style>
+#neko-planner{
+  --np-bg:#F7EFDC; --np-card:#F3E6C3; --np-card-soft:#EDE0C0; --np-border:#C9B88A;
+  --np-border-soft:rgba(201,184,138,.45); --np-ink:#74471D; --np-ink-soft:#714216;
+  --np-muted:#8A7452; --np-accent:#A87F51; --np-sel:#E5C896; --np-red:#E07A7A;
+  font:14px/1.55 system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+  color:var(--np-ink); background:var(--np-bg); border-radius:16px; padding:20px;
+  display:flex; flex-direction:column; gap:14px;
+}
+#neko-planner *{box-sizing:border-box}
+#neko-planner .np-title{font-size:19px;font-weight:600;margin:0;letter-spacing:.02em}
+#neko-planner h3{font-size:14px;font-weight:600;margin:0 0 8px}
+#neko-planner .np-source{margin:0}
+#neko-planner .np-small{font-size:12px}
+#neko-planner .np-muted{color:var(--np-muted)}
+#neko-planner .np-num{font-variant-numeric:tabular-nums}
+#neko-planner .np-strong{font-weight:600}
+#neko-planner .np-card{background:var(--np-card);border:1px solid var(--np-border-soft);border-radius:12px;padding:14px 16px}
+#neko-planner .np-rarity{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+#neko-planner .np-btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:4px;
+  border:1px solid var(--np-border);background:var(--np-card-soft);color:var(--np-ink);
+  border-radius:9px;padding:5px 14px;font:inherit;cursor:pointer;transition:background .15s,border-color .15s;
+}
+#neko-planner .np-btn:hover{background:#E8D4A8}
+#neko-planner .np-btn[aria-pressed="true"]{background:var(--np-sel);border-color:var(--np-accent);font-weight:600}
+#neko-planner .np-btn:focus-visible{outline:2px solid var(--np-accent);outline-offset:1px}
+#neko-planner .np-btn-primary{background:var(--np-ink);border-color:var(--np-ink);color:#F7EFDC;font-weight:600}
+#neko-planner .np-btn-primary:hover{background:#5E3A17}
+#neko-planner .np-btn-sm{padding:3px 11px;font-size:13px}
+#neko-planner .np-btn-xs{padding:0 9px;min-height:24px;font-size:13px;line-height:1}
+#neko-planner .np-grid{display:grid;grid-template-columns:minmax(290px,352px) minmax(0,1fr);gap:14px;align-items:start;max-width:1024px;margin:0 auto;width:100%}
+#neko-planner .np-left{display:flex;flex-direction:column;gap:12px;min-width:0}
+#neko-planner .np-thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(62px,1fr));gap:6px}
+#neko-planner .np-thumb{flex-direction:column;gap:3px;padding:7px 2px 5px}
+#neko-planner .np-thumb img{width:34px;height:34px;image-rendering:pixelated}
+#neko-planner .np-thumb span{font-size:11px;line-height:1.2}
+#neko-planner .np-preview{display:flex;gap:14px;align-items:center;margin-top:12px;padding:10px;background:var(--np-card-soft);border:1px solid var(--np-border-soft);border-radius:12px}
+#neko-planner .np-preview img{width:96px;height:96px;image-rendering:pixelated;flex:none}
+#neko-planner .np-cat-line{display:flex;align-items:center;gap:8px;font-size:15px}
+#neko-planner .np-badge{display:inline-block;font-size:11px;font-weight:600;padding:1px 9px;border-radius:99px;background:var(--np-sel);color:var(--np-ink);border:1px solid var(--np-accent)}
+#neko-planner .np-badge-off{background:transparent;border-style:dashed;color:var(--np-muted)}
+#neko-planner .np-table{width:100%;border-collapse:collapse;margin-top:4px}
+#neko-planner .np-table td{padding:5px 4px;border-bottom:1px solid var(--np-border-soft)}
+#neko-planner .np-table tr:last-child td{border-bottom:0}
+#neko-planner .np-table .np-end{text-align:right}
+#neko-planner .np-attrs td:first-child{color:var(--np-muted);width:46%}
+#neko-planner .np-right{display:flex;flex-direction:column;gap:12px}
+#neko-planner .np-ctl-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+#neko-planner .np-label{color:var(--np-muted);font-size:13px}
+#neko-planner .np-range{width:100%;accent-color:var(--np-accent);margin:4px 0}
+#neko-planner .np-select{
+  font:inherit;color:var(--np-ink);background:#FDF8EA;border:1px solid var(--np-border);
+  border-radius:8px;padding:4px 8px;
+}
+#neko-planner .np-sel-inline{width:auto;min-width:7.5em}
+#neko-planner .np-pts-head{margin-bottom:4px}
+#neko-planner .np-pts-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 0}
+#neko-planner .np-stepper{display:inline-flex;align-items:center;gap:6px}
+#neko-planner .np-stepper .np-num{min-width:2.2em;text-align:center}
+#neko-planner .np-gear{padding:9px 0;border-top:1px solid var(--np-border-soft);display:flex;flex-direction:column;gap:5px}
+#neko-planner .np-gear:first-child{border-top:0;padding-top:0}
+#neko-planner .np-gear-label{display:inline-flex;align-items:center;gap:6px;font-weight:600}
+#neko-planner .np-gear-sel{flex:1 1 12em;max-width:22em;min-width:10em}
+#neko-planner .np-gear-lv{max-width:13em;flex:1;min-width:8em}
+#neko-planner .np-gear-lvval{flex:none}
+#neko-planner .np-manuals{opacity:.55}
+#neko-planner .np-manual-list{display:flex;flex-direction:column;gap:4px}
+#neko-planner .np-manual-item{display:flex;justify-content:space-between;gap:10px}
+#neko-planner .np-input{font:inherit;color:var(--np-ink);background:#FDF8EA;border:1px solid var(--np-border);border-radius:8px;padding:4px 10px}
+#neko-planner .np-rv-level{max-width:6em}
+#neko-planner .np-rv-num{max-width:8em}
+#neko-planner .np-reverse{max-width:1024px;margin:0 auto;width:100%}
+#neko-planner .np-rv-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+#neko-planner .np-rv-title{font-weight:600;margin-bottom:6px}
+#neko-planner .np-rv-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;min-height:26px}
+#neko-planner .np-rv-out{margin-top:10px;padding:10px 12px;background:var(--np-card-soft);border:1px solid var(--np-border-soft);border-radius:10px}
+#neko-planner .np-rv-line{display:flex;gap:10px;justify-content:space-between;padding:3px 0;border-bottom:1px dashed var(--np-border-soft)}
+#neko-planner .np-rv-line:last-child{border-bottom:0}
+#neko-planner .np-rv-k{color:var(--np-muted)}
+#neko-planner .np-rv-v{text-align:right}
+#neko-planner .np-rv-line.np-rv-bad .np-rv-v{color:var(--np-red)}
+@media (max-width:760px){
+  #neko-planner{padding:14px}
+  #neko-planner .np-grid{grid-template-columns:1fr}
+  #neko-planner .np-rv-grid{grid-template-columns:1fr}
+}
+</style>
+
+<script>window.__NEKO_IMG__={"white":"data:image/gif;base64,R0lGODlhIAAgAJH/AP////8A/wAAAMDAwCH5BAEAAAMALAAAAAAgACAAAAJ7nI+py+0Pozxi1akEuHTjpHlGyH2hOJzldHrtGrWbIMOPDOR6bjvqvtH1Gr+dyiQEHjE4IA9JCwV4NBTLqfx0sFZtVEjTWoTisbGMaA5j3G6s0nyG2TOjkQR5FetknzLJk+VTFVgYRBU1l1aDaOi4khgZJkm5hnaJiVYAADs=","black":"data:image/gif;base64,R0lGODlhIAAgAPEAMf////8A/8DAwAAAACH5BAEAAAIALAAAAAAgACAAAAJtlI+py+0Po5y02ouz3rz7DxpAKADDmKGHeaatOMRqxQK2HZ8zdOfnnzPtGDhgkBV8NZBIn1M2TDCfVJ2j2axCoyVntorjfoVf3U/8ZBaN5EU5Cz+7wc+AOUwE3/ZQ2XI/1gNkIwF4I2JIophQAAA7","gray":"data:image/gif;base64,R0lGODlhIAAgAIQAAAAAAIAAAACAAICAAAAAgIAAgACAgMDAwICAgP8AAAD/AP//AAAA//8A/wD//////////////////////////////////////////////////////////////////////yH5BAEAAA8ALAAAAAAgACAAAAWh4COOZGmeaKquI8Cirhq35/zY6Qwg+B7jMtGO10IQZcCb8ag0AgE2aGnobFZbydtv6YRyidIX9fvN5paOb/pqgoaLRsZXznabrfRl/l4j+/ltPF48XT4vU35cgDCJTIdTg4JRj4hsQo6HY0xDiySaVZyUVmShmS6fSz6dnGOtpTKKVLKtK5qyqWW1kbdOqW81toW9sTl2xqfHdqLLzM3OJSEAOw==","peach":"data:image/gif;base64,R0lGODlhIAAgAPMAAP/Sxf+puf/ayP/Lw8/Hq//EwAAAAP/20v/qzgAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAkAAAkALAAAAAAgACAAAATHMMlJq7046827T0EofpMYSsEwAEI7dinroiFgBzNc36UasAESSjUQFQo/wEkYs91SRR/T1nJancHPr8XtynhLzbZL5ipxWZolWSbfuMGQIE1ht7EC6hyOsXvPV0pUdBVJMlUBBStfgkobO2aJK39AMHpKiodkhBlsAERXeZUwiwAEp0QHTgdzCQSkn4sENgZEBqavMIoxZre0rVo+VE5mwMGAn04IZ0IgkyaLYVMyJj+cWoNDo828aVvXHt8l280g0tLl6eoTEQA7","earth":"data:image/gif;base64,R0lGODlhIAAgAPIAAAAAAACAAAD/AACAgMzMzAAAAAAAAAAAACH5BAEAAAQALAAAAAAgACAAAAOuSLrc/jDK6YClmFgQxtgZtAWd921AyKDbILxvqi4bbMezBty8IGeWXg+kuDx2whuqaKwohZxAKvprIG1XGMAj3XaqqyH25YF5wDRxzGYqo9PPNbl9jmTlPvP2XD/yrjsmex99TmMxLYR8J2hbh2xtJCQfImV4kAMkFl92glouc5mSnJ0fn6ahFpQSg1uDjEtvFZofk7VtskeaI4y7MyzATSrBNLkURDnJysvMzcsJADs=","fire":"data:image/gif;base64,R0lGODlhIAAgAPIAAAAAAIAAAP8AAIAAgMzMzAAAAAAAAAAAACH5BAEAAAQALAAAAAAgACAAAAOiSLrc/jDKSau9eIHN89tCKG6eJp5jCaCsAGRry74N6QCDPNc2g+c6FG0T6Cl+sdlsMwgUa84BqJV0nQZSn/NZPXV3GudQ9w1hswTOmCyTYl+dNFBWfr/TtONc6AW9xRA4VCMhHE1ieT5nWC4rdYdxPAFSHFZtTUY+AGIjjCNdiZpFRRxRbyRqoZqpRIhoFjaspaoXkWolmhqZuLy9vr/AwQ8JADs=","silversky":"data:image/gif;base64,R0lGODlhIAAgAMIFAAQCBKSipAT+/PwC/Pz+/P///////////yH5BAEAAAcALAAAAAAgACAAAAOleLrc/jDKuQSFVuYFXq/XBhAfRyoblY2nwpZYahLtwdZVKshA4Aed3g+2i7l+PoASCTwUL0Ikgdm8cIbMKIyxe16T2WHO68EitdYvNZs+KoWD5HILXZ/bjCiV3n4PlXl4alsjfBN6VTY0hhGISTaPfXZAkVBBkz2AdUB6nUKMapxmomISiFqjlRB+STQkrlqaqzetJEqLPrCMb7y8Nr29gsLDxMUJADs=","pink":"data:image/gif;base64,R0lGODlhIAAgALMAAP/39wAAAICAgP9Kpf95vP+IxP+Xy/+q1f/Z7P/39////wAAAAAAAAAAAAAAAAAAACH5BAEAAAAALAAAAAAgACAAg//39wAAAICAgP9Kpf95vP+IxP+Xy/+q1f/Z7P/39////wAAAAAAAAAAAAAAAAAAAAj6AAEIHEiwoMGDCBMqXMiwocODAyJKfIhQ4oGLBgoUGCBQYkSHAy4OMEByIoCQGDeCPGBggEaOHUm2/AhyZEsCBCRqVEnR5caXNmXyBCmzqEyMLRl+tInxotOnSQvS7HggooGnWKHCJBhyqVOmWaFG5foVadWjYUtCZNnS6EySWdVWLAmXbYGcV53K3LoWbUq8emcuRBn37kikfBOGhGt051W5CgWcPKBApoKdAjILTYxQc4CdAUgKIKkxI2fFB0KTDK33Z86HiwM/bvmy50gEQkuOHArb5kaLpikOHOkRJeSeLHkuHit88dbFvJGPdS5cKl+T1bNr304wIAA7","rose":"data:image/gif;base64,R0lGODlhIAAgAPMAAP/a7/+v4P/i8v/T7M/PzwAAAP/M6f/z+gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAkAAAgALAAAAAAgACAAAAS/EMlJq7046827/2AVhF0gjOSEUuaZIuYqmQAgf+1KA8Nwl4IaKlAr+kI7G7EmCPZ+mmSxGawdQUQqtciFZpZaawHQtGGn1UJhQBae2cV1r+j9qsdcAIHwDPj/GwFzWns9T1pNdTB7BAAHdH8teWZfgkZ+iFZdHJGCPi0ncGWKIlyfglmjnCOpPF1kqlGJYDawtVWUGEtWWbdCl4G2Pm29noakrcO/QgYGnYClpp5/xwHNc7A3z50w288v4OHiGxEAOw==","royal":"data:image/gif;base64,R0lGODlhIAAgAKEDAAAAAAAA//8A/////yH5BAEAAAMALAAAAAAgACAAAAJ7nI+py+0Pozxg1alAuHTjpHlGyH2hOJzldHrtGrUbIMOPHOR6bjvqvtH1Gr+dyiQEHjE4IA9JCwl4NBTLqfx0sFZtVEjTWoTisbGMaA5j3G6s0nyG2TOjkQR5FetknzLJk+VTFVgYRBU1l1aDaOi4khgZJkm5hnaJiVYAADs=","robot":"data:image/gif;base64,R0lGODlhIAAgALMLALi4uAAAAKH/qFpaWv+hof+enoXLisuFhf////8AAAD/Ev///wAAAAAAAAAAAAAAACH5BAEAAAsALAAAAAAgACAAAATpcMlJq724aMyX+FmwddUXCFkhFlNwuZ5woum6BADc5t5cfjSN6AbgSXA84ILAZMpmKI2qaCQWdc1AgADUKq1XMC+7ZU5MJ3FOS70StM2LEnmoUw14d3zSNO8ABwkHdwoGYTFAT3AUdIKEhkaKJ30EjEWBg0UGhYeJIBh0dpp5VSQ7WkipbDqmf22vrK2ur6WyjGxXWhQDthVItQMIvL1qOsHCxL9tLsfDtsqwCMiyA7zQy8LOJANFA8rf3ADaGOG5VL+43duw5+1t4xbV5eju4tUd1exrqa/35PLyULkQCFAesYMIEyqsEAEAOw==","calico":"data:image/gif;base64,R0lGODlhIAAgAIQAAAAAAIAAAACAAICAAAAAgIAAgACAgMDAwICAgP8AAAD/AP//AAAA//8A/wD//////////////////////////////////////////////////////////////////////yH5BAEAAA4ALAAAAAAgACAAAAWaoCOOZGmeaKqubOuOwBm/JmCX9kzDOX/vIsBjqAMEjjqakBizHQNJ13L4yFGRO6GVWnVGWdOqOPxdLc/Tc9ZGRFJ7Sq4Ryq1m5W45MJ1IkIFBb3+AQWxMZXsBRIQ1R2+MPI5MkHOSj2sOlYp6P2BMT2KCWGZyaaJIiDB1QnliT1BmOUioZ4c5nZGvc1thq1G3wDfBw6mQxseAIQA7","water":"data:image/gif;base64,R0lGODlhIAAgAPIAAAAAAAAAgAAA/wD//8zMzAAAAAAAAAAAACH5BAEAAAQALAAAAAAgACAAAAOxSLrc/jDKSau9mACQ696d9AVg6ABBIAwDZzLoyrau9dWAIM+tVke3m443u1E2Kp1yV/wcU0slgGg8RnU5JrI0yUqVPGTqB/FisVOWeNwdpUjaGJTcyL7fu+kmSl/cSCgqRWp8IjmAgGEbA0t9dTdEajNSF2mRLZMCjjAcOZeamZsKWXtDU1KTXA9mSGcCiSyaXXiab4EkYUdimluAaUFOjyO8wEKvvmTFRsrAL87P0A8JADs=","spirit":"data:image/gif;base64,R0lGODlhIAAgAPIDAAAAAICAgMDAwP///8zMzAAAAAAAAAAAACH5BAEAAAQALAAAAAAgACAAAAOoSLrc/jDKSatd4OXrgG/exmEh+Y0KEKyiyqIEMAivKwziJc+CEPY33EgGLBaFHKLPCOghdbxmUfq07JarwHJQrVxpAVsw58V5wudQt8xFq7hrKzwLJw899VMKFquD9FBwTyqAbIJCTWFDh4JSdhEfO4w4M48aXHh1jX4TVGZjXD5flhhaY6ZSYaE0pCkrTi5hWUovkGdaZiG6MyyFDLrAkcG6fMXGxxYJADs=","ghost":"data:image/gif;base64,R0lGODlhIAAgALMAAKiO0bRhr6aa2auGyq19xLJms8wAZpnM/5+27gAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAkAAAkALAAAAAAgACAAAATAMMlJq704661D4GAVCF4YjgDwmRs6DCubePEsAAMB1+BIlh7cIKVioYhBwCF1K5pcRMDNwMTxOrcXs0lFPrNLQbMJKDh75K6UaD731gDqDTFMwYzVOo5Au3ICKQWCez4kMhKAUSl8TX5/fWuJd4cUiSpCjidIAS98lIhVQgSelJxSYpiZGUBDZJx3JWg/rSqWHmKqiK6AN6ZkXlh2MJF1Ylk7sRY0hEjDcDSjk5VkOa80WsLIfn3cQN19n+Hi4yERADs=","lucky":"data:image/gif;base64,R0lGODlhIAAgAKoAAP///wAAAMDAwP8AAP//AP8A/4CAgAAAACH5BAEAAAYALAAAAAAgACAAAAOfaLrc/jDKSauFIV+agdeb03kkAIZGUK4fqrJrEJ3LC8eYIDP2Xe4NlW4XGHiMPhKQBxAMVQOk6fZaKnofKVZps24BWmpKWbshv62x6fqBGdHpgFNWdU+TRJ262zn7lhkjH4J+MFZXBUlvJluHbD5+gVWOj1xgP0qDEpJ0BAQxI3J6F56Cc3NylDNNnKlXqjNzNTQoKSe0tbm6u7y9vhQJADs=","blue":"data:image/gif;base64,R0lGODlhIAAgAKIAAAAAAP////8A/y9j/////wAAAAAAAAAAACH5BAEAAAQALAAAAAAgACAAQAOESLrcvmO8OUe4+Nogo4RZiG3iWEUhaUVUe2Yf1KJlzRGdbbNu7/++TQzYIJU+w2DKKOA5jCNoFCLE6WAaT5VKW2aJD63YAy6bZ7fz06RWSDmxZO/N0eDAdJX8qa17b3tuV1koSGE6dHAeaVaDRmONcIOEQ06Rk5Y/b2OZQHlwbaGioy0JADs=","silver":"data:image/gif;base64,R0lGODlhIAAgAPEAAAAAAICAgMDAwMzMzCH5BAEAAAMALAAAAAAgACAAAAKEnI+py+3vQoA0SVmrFDi/LXDecU1GEKZdVmIbqnpgWKYxa3MwfFM8zQH2IL+cDWXyHY1BEU4FPcqYqstosJtlr1gqKCmr0UpcBO9cPlWHo6Ju1faCNRP3DjtvZI9nZF5R8xIYhPSRcwaF9PaH19dy+OJkVpTlNgZH0tLSqImZ9gkamlAAADs=","kuramecha":"data:image/gif;base64,R0lGODlhIAAgAKoAADMzMwAAAMDAwICAgP8AAAD/AAAAAAAAACH5BAEAAAUALAAAAAAgACAAAAOZWLrc/jDKSWsL2MZxAQiaM3BM4GWhMghk6X3pyj7mqckz/YITho+Q2oenwwmOLddrSFRgAEYC0iFcDhe16FRpXYKyx7A0h+12n9CwmtWsmq1G9aD9rseR9Pr7nnTr4SOBHW9+Xk1YhUN/KIOGiWeHBTUYaJRmaCeHJk+UPJ2fH1ZtnBWWmDAlkT2ZOyk0noyusrO0tba3uLMJADs=","socks":"data:image/gif;base64,R0lGODlhIAAgAKIHAAICAAAAAAkJCP8B/gEBAP////icU////yH5BAEAAAcALAAAAAAgACAAAAOXeLrc/jDKSasMNpLdeO5FQXTG+CmEEZpLWp7uSxpyFbNtXOLQ7eg0Go+xCQ5dwF2nGKy1hE1jLiqdJYWHaxOn3XarqIFx86Vin+a02pldu7c/8ns9zDGp3TrqfY96iGVBAINRIkteeBsAQoMAK0R+O2R/WQQBKQUChigFgosBoDYrJgQhIqWbGaGApHonr7CxsrO0tbYnCQA7","colourful":"data:image/gif;base64,R0lGODlhIAAgALsAAAAAAAD//wD/AP//AP+AQACA//8AAIAA//8A/8DAwAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAAkALAAAAAAgACAAAASkMMlJq7046827n8AVfhZgjOBJVqYqtegKEDQ61+tL4zcuD0AgYBgU/orIYKwDEDibzmd0yYEKrNKnLMAFcL/e7vZLLlM3gMIwXUAU1EN1jv2u28/Mg36/x3vWfUM5IgaFfjKFiYd/O42LaI2RjyUhAElKCYJMQpZKRUQDj1hDU1OjaFFZV6Wpi2tgsF1ga2uUZl1DsmRhYhS0v4LAwpODxcbHEhEAOw==","air":"data:image/gif;base64,R0lGODlhIAAgAMIDAAAAAICAAP//AP///////////////////yH5BAEAAAQALAAAAAAfACAAAAOsSLrc/jAuAKR9lN5NQAgaJwHCV4mjIJyok5Fr1k5Dbd+sCNy8nV+7nvAXCQqHQNwQBxTUMjzoYGWhOAceii9bi0EoplUJ5PuIPaDfK6DaqVbYd7z0Yryk3cz1eSfabW+BPihBgYZPhFOGh35FijBvMFiJbWNsko1fjx+cMCE6imkeKliZX0EmZnGmGB1gJmBUhB2uMmisLrQsFXWzvBO1uA2/u7ozCr/IxsfMCQA7","rainbow":"data:image/gif;base64,R0lGODlhIAAgAKEDAAAAAP8AAP8A/////yH5BAEAAAMALAAAAAAgACAAAAJwnI+py+0Po5y02ouz3rz7Dw4AEAIBmaHHeKYjYgYtNbJ1LZ/qw555HJOZdoyg72cUzoq5Y/OJdBiT0GhjWq3WmE0qdLhMUIe9rpK4+naDbN3Cm4z70KIsVaDL0+vaGy4fJub39Qe0p+C3JZIY0rhQAAA7","orange":"data:image/gif;base64,R0lGODlhIAAgAPECAAAAANS1DP///8zMzCH5BAEAAAMALAAAAAAgACAAAAKYnI+py+0PowOygZtwzZeivh2AQHoiuHWCKQaBFo2lcrkubF0rbdvAmxMEdplb74cbdIzA4st3M9VevyfLUK0egUhttontibPaJxOsPC7HXii6LHab5zdnfHse09b3vp7RASd3dvXh59MFlaQ0dUiVWPfx1Yg4FRiJRaIYiHNpJbJSMoLyQJYpOpNyhbIY4voKGys7S1v7WgAAOw==","ace":"data:image/gif;base64,R0lGODlhIAAgAKIAABwaGyR+hFlTF////8DAwAAAAAAAAAAAACH5BAEAAAQALAAAAAAgACAAAAOuSLrc/jDKSVW5+FZ5Rx8AUGxLVgxoKqweSRRh/KWoRsKyOLc2hYe/E0rksuRiKWKmEowBUpmaL/BzQoWeEQdAdSIxVwfGAuJWQ4MArcfAXZ6xLqwQUIcf7nK8zqe1tiJeSEk6E2+BVn4gWoaIZ4qMEYdncE9QPoKCIJeYmT9+kZKeiZyNXlWQnUAYpFKqjKhrTEBtg6WGrkarYxsnoW5FJaEvtMGSucZiyMkNbEUJADs=","marmalade":"data:image/gif;base64,R0lGODlhIAAgAOMIAAAAAMxmM/+ZM/+uTP/AVP/MM//MZv/Mmf///////////////////////////////yH5BAEAAAgALAAAAAAgACAAAATVEMlJq704680l+ODXaV/xGQNBAOMUAsZRGDQ4sC2M1jqq3rgRbFAzfVKEG0LUGRZrPmXLQzQAZrQoK9SsXrO+EDGYgelk4NQJxSxDY1her+1iAgS0Gzyd5F10HwR4OwAHZnl9dBSAKoNVaFkpUm43gnk0kHmKFieVjphxVk1Wap97NRwlpI2Xp2QYAERYSKZor7CyiCuttl0Gsyu1M7d/uWyWO3vEFQABsiHIjyZNzqIe0aDLzM5kANgx2tuTS5YvOQGv3gLhJLfq7FPk6/Eb7/T18BkRADs=","jess":"data:image/gif;base64,R0lGODlhIAAgALMAAP////8A/wAAAMDAwDMzMwAAAAAAAAAAAJmZmQAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAAMALAAAAAAgACAAAASPcMhJq7046827n8QVfhYBjOBJVqYqtehKCDQ61+tL4zcu7zVCz/cZAo+xTg9xZBI9y+YuyYkCnQLqxnic/oQ3QHCm3XaROR1gzRaXoUI2OF3y0lnou677Vp6fcANcXkJQQUBDQoAiiD2OiWaIU5OIW4o1lFlTYHMsLWKaWXEnNHJAAJ6cqoKqrYV6sLGyEhEAOw==","mike":"data:image/gif;base64,R0lGODlhIAAgAMIEAAAAAICAgFDIeJHP7v///////////////yH+EUNyZWF0ZWQgd2l0aCBHSU1QACH5BAEKAAQALAAAAAAgACAAAAOTSLrc/jDKSat1IGtwoQ5gyBHbSAEgmmaKKlpqvLjalaUr3ZF48IW+jgtITJ04wyLRNGOiSsolxoeMDa63aLBBGwKu2ChzJipmwuZITIx+qbWpNkuSNKPHHrhvIJsgAwIhgTl8RkeAgj1fTzaIIINAfRV1S4YwT2aSNl1ZWztPG5E7LW46ozyepqOSmqtOc6exsrMJADs=","lucy":"data:image/gif;base64,R0lGODlhIAAgAMIDAAAAAP8A//uu0v///////////////////yH5BAEKAAQALAAAAAAgACAAAAOcSLrc/jDKSatdIF+ah9eb03nkAAIhUK4fIKCXypbuG89rbWNwI+OkjGBHUPUwQNpr+Bodix+crJYZmXzBX8401H4YP5Q3250dp4pxsGxOf6FAKgttdCfl2yvIbuZWw28iUn4tWntgc0Yuah4BT2lTVSZcL1IQTkFrTTmXUSZWhUV/EYqeWVcxMIp/gSGiPWiuYLCHsra3uLm6uxcJADs=","neon":"data:image/gif;base64,R0lGODlhIAAgAKECAAAAAADfAP///////yH5BAEAAAIALAAAAAAgACAAAAJ3lI8YG+mf2AIUyAazCbVbrU1Wx1kYGFUltZ7o0ZLqq3j2TAuXfeX6fXO9YiySb8Pw9I4i4MJ3aZqWINEqyBI+SlcnC8UFyj7VkVimdXTPuDLbOHzDwfK2u56GrJ3MvSoPljQFCPV1FGJ4qJeoqMbYGEEIOUl5UAAAOw==","ghetto":"data:image/gif;base64,R0lGODlhIAAgAPIAAAAAAACAAP8A/8DAwMzMzAAAAAAAAAAAACH5BAEAAAQALAAAAAAgACAAAAONSLrc/jDKSau9mACQKwhbJ30ByIkOuYUo863vacELXN4cO8L87W8gyspH/L2EpKKqBJSNiiBlzBNlQoFMIVGVxGZ33iq3GowkoVnvEWITXBXnMjvOs/2Q9eHyS2WqcXJmOT9WdBNjgIl+TzhNXS98bFZkkGdOc11RmSZ1KXR+XGE0LnkrGqU8LaqrrA8JADs=","moka":"data:image/gif;base64,R0lGODlhIAAgAPcAAAAAAH5cL8GUW7/K0v///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAUAAAMALAAAAAAgACAAAAjXAAcIHAig4MCDCAkaTEhQgEMADBMCcCgAYsSJBAhUjNgw48aLDjVa5IjxIccBEwWIJKnS5MmUK0Fq/Pgy5MaCOFG2pHlSZ8uUFEvy7OmT4k6jI4kKBEpxJlKlDR/ClBoUatGCRisCTdpzK1OtVaF+zZqVa80AaANkTavWLEuyTp+KdZjWpoC6Q7tmzRg3L1GmfOVaVfg15+CoWnGGPTy2LOPGZBf+fVi2sl+ETLFSproYJNKgoAUzxLmVLwDTQQ1LDBw0I07XRk2PJk3bYO3ah3Pr3s37YEAAOw==","usa":"data:image/gif;base64,R0lGODlhIAAgAMIDAAAA//8AAP8A/////////////////////yH5BAEAAAQALAAAAAAgACAAAAOvSLocsa49RqsKIOJ88bTg9ogXwIGhOQ7DRKLVpgbsaKowJWfifualjIlFVOGAwVuNdTsid8Ro8wOULYuDG7UKiHqZ2+o1S6S1kJCluZypoQnmOLt9RtPWeG392Yrep3tVazUOXhF2g19lYRUmcHKKhASOMEqRUpSCWFKLb4VMXl1dh3abpowwn0QChqgod5d3bxeEeJ+uIX4OqoGlvXGzab9uwXAtW4W4qYykxc4KCQA7","kina":"data:image/gif;base64,R0lGODlhIAAgALMAAAAAAP////wY8SSN8Ia/9GA7C3ZRIR0YEuXAkf/8/P///wAAAAAAAAAAAAAAAAAAACH5BAEAAAoALAAAAAAgACAAAATWUMlJq704602B/6DHXUBinqgJjF3qniurlK8bj3Qy7Pt7c7QBYTgc6IwqWZAgJDaRiZ9mSWTqrFHlidczQaWaaA0lmrFyvlspBqaIUx8Lu9CeREMV6cFgqOPoEwAGCH0yeQV0H3uEZWcefHwHCIIIhJJ+HQCVi5UGB5yWkxualZSVp6idjRikk4OpsH2Yra6wsXEkqYKQr6h8AHt1tJuyvKqCwaywe7+Pv3wIwW3Dm53PkNF9hXK2nr4GAp7S29ypkZ/on82/GSG7vCDXq1PubO6G+PksEQA7","spooky":"data:image/gif;base64,R0lGODlhIAAgAKEDAAAAAP8AAP+AAP///yH5BAEAAAMALAAAAAAgACAAAAKf3ICpy+afnpxDGEDvRVna02GgKJSWYnwiJaLfqVUxG2MviKvhxplnBNl1MroM44jkDEOrpRPSfEo306ly8qk6TVqPh9tNAbK+rFaAKJerJgVaPX6W0ou5Oz5E05NuM0U/xteXdyeYVkJUZwgQ8JaoGBBwFBno5wCYABgpicBZaVlxhMmo6IiFNEo6t/rIoAaH91fmCoso95qiFrbLO1EAADs=","holiday":"data:image/gif;base64,R0lGODlhIAAgAMIDAOgAAP8A/wC/AP///////////////////yH5BAEAAAQALAAAAAAgACAAAAOVSLrcAC3KuYAQkOpp8f7OlYEgMAwjuZmoqj3PCacuwZ44TpOmkLPA2u3ky+lUQ6OyVRoUkz5WtClDVVGY4+p3xWa1FJNYp7t8mWEyuSMCc7qyGBf9ti6NQcoFfrdfNHtJdz0CL0RFTkaIe3QOKHKJOYgwjQyUN4hEaw9bdjgBeDI8lIMwQjM6MzURMzurr7CxsrO0sAkAOw==","valentine":"data:image/gif;base64,R0lGODlhIAAgAMIDAP8AAP8A//5S0////////////////////yH5BAEAAAQALAAAAAAgACAAAAO5SLrc/jASQcWqVkZMJ9dPBYwi2YEMNa7CaqJp687ACY0Erqj0G9Ut1UU2s904gFgxowG2HDwgLPcMBZmXyU1SgdZq09RCR8SGFd8LeJpkkNq78MotOrsGtBJsNMD3/XgYAHgggwMCgH18f4qEP4yGjJJ/OjeQk5h4cA+DhpGZlJUNn4mgiJ2WiId+FZOqqJyTnxR/qn6iY42UkraNsKOSnpMBmsWbbpk9np4/M7IrurjNNGjUZ9fYGgkAOw==","mermaid":"data:image/gif;base64,R0lGODlhIAAgAKIAAID//wCRgyPYrzFxYODPAfEnAwAAAMDAwCH5BAEAAAcALAAAAAAgACAAAAOleLrc/jDKSY+p+NqhNXZGcRmcJX5gIZADJ5zoEqqsW8DxLKzui38z1cpg2N1+leJuyVx6Ms6mcpWLMqfPpHWbpUyb0ipRGdiNqVXwNSZTm9mMs5kIdxCWhDqIAAAQCF1sSn1OehZuaCB0ioduI09ELSBzV1dKjy0lcZZcX5EtXV8rXFKZmnFEpGZOY60NqZVDl1KWqK23Fre6Y4ZxpoF1Nae9uWMJADs=","dave":"data:image/gif;base64,R0lGODlhIAAgAIQPAAAAAAwoPBI4U7gaFyBUef8oAP8oI8S4bP27pv/FtvTLvv3OturfqP/r2//5vP///////////////////////////////////////////////////////////////////yH5BAEKABAALAAAAAAgACAAAAXqICSOZGmeaKqubOuOxxm/UEEezgzntA0nPBEuoWv5IMMg0gEsro5JHo6pZPmmjuxhm+06Wdiu2Ou6dhHosZaGZDweAMBi/o4zvquDGw5oIBp1AHdsOHGGh3FVLTgNhn6NcQ2KLQoNlpeYDQpsI5WZl5ucnQoKcwukoUKiEJ6aJTh4KwMGtLQDO5OyBm+8BrdTsSmzu3Bvtgy5KHEQw3wAD8fLLQAEBADDAwAG17bU1iwAAuIC2IbY4wIAK+EB7djF2O0B6etx7ra88QGGKlxZDPoCYEOmJdiWgwcGKMwWZ+EAhFtWSZxI0UUIADs=","fancy":"data:image/gif;base64,R0lGODlhIAAgAKEAAP////8A/wAAAP///yH+EUNyZWF0ZWQgd2l0aCBHSU1QACH5BAEKAAMALAAAAAAgACAAAAKDnIWZxu3PlISUSlVzu0u7PnCItwGAEInkIZhoKI5e60bmjb8ZfW6xbqEBD7hc5fIQFk/D38e17LF+QGUURQXxoq4sJhS4KcTeyfZalhG5aXUKUSyLj0KvMcjMLt2svD3+0VYHJ7XmFzPVAqezhTSTZ0g4NNMkw7eCmam5ydnp+QkaWgAAOw=="};</script>
+<script>
+(function () {
+  "use strict";
+  var ROOT = document.getElementById("neko-planner");
+  var IMG = window.__NEKO_IMG__ || {};
+
+  var RARITY_ORDER = ["free", "normal", "rare", "epic", "limited"];
+  var RARITIES = {
+    free:    { label: "免费", hp: 98,  atk: 10, def: 2, agi: 10, eva: 300, crit: 0,   critDmg: 0 },
+    normal:  { label: "普通", hp: 104, atk: 11, def: 3, agi: 11, eva: 400, crit: 100, critDmg: 0 },
+    rare:    { label: "稀有", hp: 110, atk: 12, def: 4, agi: 12, eva: 500, crit: 150, critDmg: 300 },
+    epic:    { label: "史诗", hp: 118, atk: 13, def: 5, agi: 13, eva: 600, crit: 200, critDmg: 500 },
+    limited: { label: "限定", hp: 126, atk: 14, def: 6, agi: 14, eva: 700, crit: 250, critDmg: 800 }
+  };
+
+  var CATS = [
+    ["white", "White", "free", 0], ["black", "Black", "normal", 50], ["gray", "Gray", "normal", 50],
+    ["peach", "Peach", "normal", 50], ["earth", "Earth", "normal", 50], ["fire", "Fire", "normal", 50],
+    ["silversky", "Silversky", "normal", 50], ["pink", "Pink", "normal", 50], ["rose", "Rose", "normal", 50],
+    ["royal", "Royal", "normal", 50], ["robot", "Robot", "rare", 100], ["calico", "Calico", "rare", 100],
+    ["water", "Water", "rare", 100], ["spirit", "Spirit", "rare", 100], ["ghost", "Ghost", "rare", 100],
+    ["lucky", "Lucky", "rare", 100], ["blue", "Blue", "rare", 100], ["silver", "Silver", "rare", 100],
+    ["kuramecha", "Kuramecha", "rare", 100], ["socks", "Socks", "rare", 100], ["colourful", "Colourful", "epic", 200],
+    ["air", "Air", "epic", 200], ["rainbow", "Rainbow", "epic", 200], ["orange", "Orange", "epic", 200],
+    ["ace", "Ace", "epic", 200], ["marmalade", "Marmalade", "epic", 200], ["jess", "Jess", "epic", 200],
+    ["mike", "Mike", "epic", 200], ["lucy", "Lucy", "epic", 200], ["neon", "Neon", "epic", 200],
+    ["ghetto", "Ghetto", "limited", 300], ["moka", "Moka", "limited", 300], ["usa", "U.S.A.", "limited", 300],
+    ["kina", "Kina", "limited", 300], ["spooky", "Spooky", "limited", 300], ["holiday", "Holiday", "limited", 300],
+    ["valentine", "Valentine", "limited", 300], ["mermaid", "Mermaid", "limited", 300], ["dave", "Dave", "limited", 300],
+    ["fancy", "Fancy", "limited", 300]
+  ].map(function (a) { return { slug: a[0], name: a[1], rarity: a[2], cost: a[3] }; });
+
+  var SLOTS = [["weapon", "喵刃"], ["body", "喵衫"], ["shoe", "喵靴"], ["charm", "喵饰"]];
+  var ITEMS = {
+    weapon: [
+      { slug: "weapon_muyu_stick", name: "木鱼棒", price: 150, eb: 26, base: { atk: 2 }, per: { atk: 1 } },
+      { slug: "weapon_fish_bone", name: "鱼骨刺", price: 260, eb: 36, base: { atk: 1, crit: 150 }, per: { atk: 1, crit: 51 }, skill: "命中后追加 25% 伤害（每局 1 次）" }
+    ],
+    body: [
+      { slug: "equip_box_armor", name: "纸箱甲", price: 140, eb: 24, base: { def: 3, hp: 10 }, per: { def: 1, hp: 3 } },
+      { slug: "equip_paper_cape", name: "报纸披风", price: 200, eb: 30, base: { hp: 15, eva: 100 }, per: { hp: 4, eva: 34 } }
+    ],
+    shoe: [
+      { slug: "equip_soft_paw_shoe", name: "软底肉球套", price: 130, eb: 22, base: { agi: 2, eva: 150 }, per: { agi: 1, eva: 43 } },
+      { slug: "equip_bell_boots", name: "铃铛短靴", price: 220, eb: 32, base: { agi: 1, def: 1 }, per: { agi: 1, def: 1 } }
+    ],
+    charm: [
+      { slug: "equip_clover_bell", name: "四叶猫铃", price: 170, eb: 28, base: { crit: 200, critDmg: 500 }, per: { crit: 68, critDmg: 170 } },
+      { slug: "equip_evil_eye", name: "恶魔眼挂件", price: 240, eb: 34, base: { critDmg: 800, def: -1 }, per: { critDmg: 213 } }
+    ]
+  };
+  var ITEM_BY = {};
+  Object.keys(ITEMS).forEach(function (c) { ITEMS[c].forEach(function (it) { ITEM_BY[it.slug] = it; it.cat = c; }); });
+
+  var MANUALS = [
+    ["晒肚皮心经", 100, "挑战胜利后恢复体力（3 阶 +9）"],
+    ["影步帖", 160, "开战前 3 回合闪避 +2%（3 阶 +4.4%）"],
+    ["铁壁笔记", 150, "防御 +2、敏捷 −1（3 阶 防 +5）"],
+    ["招财咒", 120, "占位，待掉落系统上线"]
+  ];
+
+  var STAT_ORDER = ["hp", "atk", "def", "agi", "eva", "crit", "critDmg"];
+  var STAT_LABEL = { hp: "生命", atk: "攻击", def: "防御", agi: "敏捷", eva: "闪避", crit: "暴击", critDmg: "暴伤" };
+  var BP_STATS = { eva: 1, crit: 1, critDmg: 1 };
+
+  function pct(bp) { var v = bp / 100; return Number.isInteger(v) ? v + "%" : v.toFixed(1) + "%"; }
+  function fmtStat(k, v) { return (v >= 0 ? "+" : "") + (BP_STATS[k] ? pct(v) : v); }
+  function fmtFun(n) { return n.toLocaleString("en-US"); }
+
+  function gearContrib(g) {
+    var c = { hp: 0, atk: 0, def: 0, agi: 0, eva: 0, crit: 0, critDmg: 0 };
+    if (g && g.item) {
+      var it = ITEM_BY[g.item];
+      STAT_ORDER.forEach(function (k) {
+        c[k] += (it.base[k] || 0) + (it.per[k] || 0) * (g.lv || 0);
+      });
+    }
+    return c;
+  }
+
+  function statsOf(cfg, offSet) {
+    var r = RARITIES[cfg.rarity];
+    var s = {
+      hp: r.hp + cfg.points.hp * 5,
+      atk: r.atk + cfg.points.atk,
+      def: r.def + cfg.points.def,
+      agi: r.agi,
+      eva: r.eva,
+      crit: r.crit + (cfg.level - 1) * 30,
+      critDmg: r.critDmg,
+      cap: {}
+    };
+    SLOTS.forEach(function (sl) {
+      if (offSet && offSet.has(sl[0])) return;
+      var g = gearContrib(cfg.gear[sl[0]]);
+      STAT_ORDER.forEach(function (k) { s[k] += g[k]; });
+    });
+    if (s.eva > 3500) { s.cap.eva = true; s.eva = 3500; }
+    if (s.crit > 4000) { s.cap.crit = true; s.crit = 4000; }
+    if (s.critDmg > 10000) { s.cap.critDmg = true; s.critDmg = 10000; }
+    return s;
+  }
+
+  function levelFunTotal(lv) { var t = 0; for (var k = 2; k <= lv; k++) t += 8 + 3 * k; return t; }
+  function enhanceFunTotal(eb, lv) { return eb * lv * (lv + 3) / 2; }
+  function pointsAvail(level) { return (level - 1) * 3; }
+
+  function emptyGear() { return { weapon: { item: "", lv: 0 }, body: { item: "", lv: 0 }, shoe: { item: "", lv: 0 }, charm: { item: "", lv: 0 } }; }
+
+  /* ---------- 每只猫独立配置（浏览器自动保存） ---------- */
+
+  var STORE_KEY = "neko-planner-v1";
+  var store = { cat: "ghetto", cats: {} };
+
+  function defaultCfg() { return { level: 1, points: { hp: 0, atk: 0, def: 0 }, gear: emptyGear() }; }
+  function cfgOf(slug) {
+    if (!store.cats[slug]) store.cats[slug] = defaultCfg();
+    var c = store.cats[slug];
+    if (typeof c.level !== "number" || c.level < 1 || c.level > 99) c.level = 1;
+    if (!c.points || typeof c.points.hp !== "number") c.points = { hp: 0, atk: 0, def: 0 };
+    ["hp", "atk", "def"].forEach(function (k) { if (typeof c.points[k] !== "number" || c.points[k] < 0) c.points[k] = 0; });
+    if (!c.gear) c.gear = emptyGear();
+    return c;
+  }
+
+  var state = { rarity: "limited", cat: "ghetto", level: 1, points: { hp: 0, atk: 0, def: 0 }, gear: emptyGear() };
+
+  function catBySlug(slug) { for (var i = 0; i < CATS.length; i++) if (CATS[i].slug === slug) return CATS[i]; return null; }
+  function catsOf(rarity) { return CATS.filter(function (c) { return c.rarity === rarity; }); }
+
+  function clampPoints(pts, level) {
+    var avail = pointsAvail(level);
+    var alloc = pts.hp + pts.atk + pts.def;
+    while (alloc > avail) {
+      if (pts.hp >= pts.atk && pts.hp >= pts.def) pts.hp--;
+      else if (pts.atk >= pts.def) pts.atk--;
+      else pts.def--;
+      alloc--;
+    }
+  }
+
+  function validateGear(gear) {
+    SLOTS.forEach(function (sl) {
+      var g = gear[sl[0]] || (gear[sl[0]] = { item: "", lv: 0 });
+      var ok = g.item && ITEM_BY[g.item] && ITEM_BY[g.item].cat === sl[0];
+      if (!ok) { g.item = ""; g.lv = 0; }
+      g.lv = Math.max(0, Math.min(10, g.lv | 0));
+    });
+  }
+
+  function loadStore() {
+    var saved = null;
+    try { saved = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); } catch (e) {}
+    if (saved && typeof saved === "object") {
+      if (saved.cats && typeof saved.cats === "object") {
+        Object.keys(saved.cats).forEach(function (slug) {
+          if (!catBySlug(slug)) return;
+          var c = saved.cats[slug];
+          if (!c || typeof c !== "object") return;
+          var cfg = cfgOf(slug);
+          if (typeof c.level === "number") cfg.level = Math.max(1, Math.min(99, c.level | 0));
+          if (c.points) ["hp", "atk", "def"].forEach(function (k) {
+            if (typeof c.points[k] === "number" && c.points[k] >= 0) cfg.points[k] = c.points[k];
+          });
+          if (c.gear) SLOTS.forEach(function (sl) {
+            var g = c.gear[sl[0]];
+            if (g) cfg.gear[sl[0]] = { item: typeof g.item === "string" ? g.item : "", lv: g.lv | 0 };
+          });
+          clampPoints(cfg.points, cfg.level);
+          validateGear(cfg.gear);
+        });
+      }
+      if (saved.cat && catBySlug(saved.cat)) store.cat = saved.cat;
+      if (saved.rv && typeof saved.rv === "object") {
+        if (RARITIES[saved.rv.rarity]) rv.rarity = saved.rv.rarity;
+        if (typeof saved.rv.level === "number") rv.level = Math.max(1, Math.min(99, saved.rv.level | 0));
+        if (saved.rv.result === "oppDead" || saved.rv.result === "meDead" || saved.rv.result === "none") rv.result = saved.rv.result;
+        if (Array.isArray(saved.rv.events)) {
+          rv.events = saved.rv.events.filter(function (e) {
+            return RV_EVENT_CATS.some(function (c) { return c.id === e; });
+          });
+        }
+        ["a", "d"].forEach(function (k) {
+          if (Array.isArray(saved.rv[k])) {
+            rv[k] = saved.rv[k].filter(function (x) {
+              return x && typeof x.v === "number" && x.v > 0 && RV_TYPES[x.t];
+            }).slice(0, 20);
+          }
+        });
+      }
+    }
+  }
+
+  var persistTimer = null;
+  function persistNow() {
+    if (persistTimer) { clearTimeout(persistTimer); persistTimer = null; }
+    try { localStorage.setItem(STORE_KEY, JSON.stringify({ cat: state.cat, cats: store.cats, rv: rv })); } catch (e) {}
+  }
+  function persist() {
+    if (persistTimer) clearTimeout(persistTimer);
+    persistTimer = setTimeout(persistNow, 250);
+  }
+  window.addEventListener("pagehide", persistNow);
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "hidden") persistNow();
+  });
+
+  function switchCat(slug) {
+    store.cats[state.cat] = { level: state.level, points: state.points, gear: state.gear };
+    state.cat = slug;
+    state.rarity = catBySlug(slug).rarity;
+    var c = cfgOf(slug);
+    state.level = c.level;
+    state.points = c.points;
+    state.gear = c.gear;
+    updateAll();
+  }
+
+  /* ---------- 渲染 ---------- */
+
+  function renderRarity() {
+    var el = document.getElementById("np-rarity");
+    el.innerHTML = RARITY_ORDER.map(function (r) {
+      return '<button type="button" class="np-btn" data-r="' + r + '" aria-pressed="' + (state.rarity === r) + '">' + RARITIES[r].label + '</button>';
+    }).join("");
+  }
+
+  function renderThumbs() {
+    var el = document.getElementById("np-thumbs");
+    el.innerHTML = catsOf(state.rarity).map(function (c) {
+      return '<button type="button" class="np-btn np-thumb" data-cat="' + c.slug + '" aria-pressed="' + (state.cat === c.slug) + '" aria-label="选择 ' + c.name + '">' +
+        '<img src="' + (IMG[c.slug] || "") + '" alt="">' + '<span>' + c.name + '</span></button>';
+    }).join("");
+  }
+
+  function renderCat() {
+    var c = catBySlug(state.cat);
+    var img = document.getElementById("np-cat-img");
+    img.src = IMG[c.slug] || "";
+    img.alt = c.name + " 预览图";
+    document.getElementById("np-cat-name").textContent = c.name;
+    document.getElementById("np-cat-rarity").textContent = RARITIES[c.rarity].label;
+    document.getElementById("np-cat-meta").textContent = c.cost > 0 ? "图鉴解锁 " + c.cost + " FUN" : "免费初始喵";
+  }
+
+  function renderStats() {
+    var s = statsOf(state, null);
+    var rows = [
+      ["生命", String(s.hp)],
+      ["攻击", String(s.atk)],
+      ["防御", String(s.def)],
+      ["敏捷", String(s.agi)],
+      ["闪避", "+" + pct(s.eva) + (s.cap.eva ? "（已封顶 35%）" : "")],
+      ["暴击", "+" + pct(s.crit) + (s.cap.crit ? "（已封顶 40%）" : "")],
+      ["暴伤", "+" + pct(s.critDmg) + (s.cap.critDmg ? "（已封顶 100%）" : "")],
+      ["体力上限", "20"]
+    ];
+    document.getElementById("np-stat-tbody").innerHTML = rows.map(function (r) {
+      return "<tr><td>" + r[0] + "</td><td class='np-end np-num'>" + r[1] + "</td></tr>";
+    }).join("");
+  }
+
+  function renderLevel() {
+    document.getElementById("np-level").value = state.level;
+    document.getElementById("np-level-val").textContent = "Lv." + state.level;
+    document.getElementById("np-level-fun").textContent = fmtFun(levelFunTotal(state.level));
+  }
+
+  function ptsRowsHtml() {
+    return [["hp", "生命", 5], ["atk", "攻击", 1], ["def", "防御", 1]].map(function (p) {
+      return '<div class="np-pts-row"><span>' + p[1] + ' <span class="np-small np-muted">+' + p[2] + '/点</span></span>' +
+        '<span class="np-stepper">' +
+        '<button type="button" class="np-btn np-btn-xs" data-key="' + p[0] + '" data-d="-10" aria-label="减少' + p[1] + '10">−10</button>' +
+        '<button type="button" class="np-btn np-btn-xs" data-key="' + p[0] + '" data-d="-1" aria-label="减少' + p[1] + '">−</button>' +
+        '<span class="np-num" id="np-pts-' + p[0] + '">0</span>' +
+        '<button type="button" class="np-btn np-btn-xs" data-key="' + p[0] + '" data-d="1" aria-label="增加' + p[1] + '">+</button>' +
+        '<button type="button" class="np-btn np-btn-xs" data-key="' + p[0] + '" data-d="10" aria-label="增加' + p[1] + '10">+10</button>' +
+        '</span></div>';
+    }).join("");
+  }
+
+  function renderPoints() {
+    var avail = pointsAvail(state.level);
+    var alloc = state.points.hp + state.points.atk + state.points.def;
+    document.getElementById("np-pts-rem").textContent = avail - alloc;
+    ["hp", "atk", "def"].forEach(function (k) {
+      document.getElementById("np-pts-" + k).textContent = state.points[k];
+    });
+    document.getElementById("np-wash-cost").textContent = "费用 " + alloc * 2 + " FUN · 7 天 1 次 · 需空闲";
+  }
+
+  function gearRowsHtml() {
+    return SLOTS.map(function (sl) {
+      var opts = '<option value="">不装备</option>' + ITEMS[sl[0]].map(function (it) {
+        return '<option value="' + it.slug + '">' + it.name + '（' + it.price + ' FUN）</option>';
+      }).join("");
+      return '<div class="np-gear" data-slot="' + sl[0] + '">' +
+        '<div class="np-ctl-row"><span class="np-gear-label">' + sl[1] + '</span>' +
+        '<select class="np-select np-gear-sel" data-slot="' + sl[0] + '" aria-label="' + sl[1] + '选择">' + opts + '</select></div>' +
+        '<div class="np-ctl-row"><input type="range" class="np-range np-gear-lv" data-slot="' + sl[0] + '" min="0" max="10" value="0" aria-label="' + sl[1] + '强化等级">' +
+        '<span class="np-num np-gear-lvval">Lv.0</span></div>' +
+        '<div class="np-small np-muted np-gear-eff">—</div>' +
+        '</div>';
+    }).join("");
+  }
+
+  function renderGear() {
+    SLOTS.forEach(function (sl) {
+      var slot = sl[0];
+      var g = state.gear[slot];
+      var row = ROOT.querySelector('.np-gear[data-slot="' + slot + '"]');
+      var sel = row.querySelector(".np-gear-sel");
+      var lv = row.querySelector(".np-gear-lv");
+      sel.value = g.item;
+      lv.value = g.lv;
+      lv.disabled = !g.item;
+      row.querySelector(".np-gear-lvval").textContent = "Lv." + g.lv;
+      var eff = "—";
+      if (g.item) {
+        var it = ITEM_BY[g.item];
+        var parts = ["Lv" + g.lv + "：" + contribText(it, g.lv)];
+        if (it.skill) parts.push("特效：" + it.skill);
+        if (g.lv < 10) parts.push("下一级强化 " + fmtFun(it.eb * (2 + g.lv)) + " FUN");
+        eff = parts.join(" · ");
+      }
+      row.querySelector(".np-gear-eff").textContent = eff;
+    });
+  }
+
+  function contribText(it, lv) {
+    var parts = [];
+    STAT_ORDER.forEach(function (k) {
+      var v = (it.base[k] || 0) + (it.per[k] || 0) * lv;
+      if (v) parts.push(STAT_LABEL[k] + " " + fmtStat(k, v));
+    });
+    return parts.join("，") || "—";
+  }
+
+  function renderManuals() {
+    document.getElementById("np-manual-rows").innerHTML = MANUALS.map(function (m) {
+      return '<div class="np-manual-item"><span>' + m[0] + '（' + m[1] + ' FUN）</span><span class="np-small np-muted">' + m[2] + '</span></div>';
+    }).join("");
+  }
+
+  function funBreakdown(cfg) {
+    var unlock = catBySlug(cfg.cat).cost;
+    var lv = levelFunTotal(cfg.level);
+    var buy = 0, enh = 0;
+    SLOTS.forEach(function (sl) {
+      var g = cfg.gear[sl[0]];
+      if (g.item) {
+        var it = ITEM_BY[g.item];
+        buy += it.price;
+        enh += enhanceFunTotal(it.eb, g.lv);
+      }
+    });
+    return { unlock: unlock, level: lv, buy: buy, enh: enh, total: unlock + lv + buy + enh };
+  }
+
+  function renderFun() {
+    var f = funBreakdown(state);
+    document.getElementById("np-fun-unlock").textContent = fmtFun(f.unlock);
+    document.getElementById("np-fun-level").textContent = fmtFun(f.level);
+    document.getElementById("np-fun-buy").textContent = fmtFun(f.buy);
+    document.getElementById("np-fun-enh").textContent = fmtFun(f.enh);
+    document.getElementById("np-fun-total").textContent = fmtFun(f.total);
+  }
+
+  /* ---------- 事件绑定与初始化 ---------- */
+
+  function updateAll() {
+    clampPoints(state.points, state.level);
+    validateGear(state.gear);
+    store.cats[state.cat] = { level: state.level, points: state.points, gear: state.gear };
+    renderRarity();
+    renderThumbs();
+    renderCat();
+    renderStats();
+    renderLevel();
+    renderPoints();
+    renderGear();
+    renderFun();
+    rvAnalyzed = false;
+    rvUpdate();
+    persist();
+  }
+
+  ROOT.addEventListener("click", function (e) {
+    var t = e.target.closest("button");
+    if (!t) return;
+    if (t.dataset.r) {
+      var nr = t.dataset.r;
+      if (nr !== state.rarity) {
+        var keep = catBySlug(state.cat);
+        if (!keep || keep.rarity !== nr) switchCat(catsOf(nr)[0].slug);
+        else { state.rarity = nr; updateAll(); }
+      }
+      return;
+    }
+    if (t.dataset.cat) { if (t.dataset.cat !== state.cat) switchCat(t.dataset.cat); return; }
+    if (t.id === "np-wash") { state.points = { hp: 0, atk: 0, def: 0 }; updateAll(); return; }
+    if (t.id === "np-rv-run") { rvAnalyze(); return; }
+    if (t.id === "np-rv-a-add" || t.id === "np-rv-d-add") {
+      var isA = t.id === "np-rv-a-add";
+      var numEl = document.getElementById(isA ? "np-rv-a-num" : "np-rv-d-num");
+      var typeEl = document.getElementById(isA ? "np-rv-a-type" : "np-rv-d-type");
+      var v = Math.round(Number(numEl.value));
+      var list = isA ? rv.a : rv.d;
+      if (v > 0 && list.length < 20) {
+        list.push({ v: v, t: typeEl.value });
+        numEl.value = "";
+        rvAnalyzed = false;
+        rvUpdate(); persist();
+      }
+      return;
+    }
+    if (t.id === "np-rv-clear") { rv.a = []; rv.d = []; rv.events = []; rvAnalyzed = false; rvUpdate(); persist(); return; }
+    if (t.dataset.rvkey) {
+      rv[t.dataset.rvkey].splice(parseInt(t.dataset.rvidx, 10), 1);
+      rvAnalyzed = false;
+      rvUpdate(); persist(); return;
+    }
+    if (t.dataset.rvevent) {
+      var ei = rv.events.indexOf(t.dataset.rvevent);
+      if (ei >= 0) rv.events.splice(ei, 1); else rv.events.push(t.dataset.rvevent);
+      rvAnalyzed = false;
+      rvUpdate(); persist(); return;
+    }
+    if (t.dataset.key && t.dataset.d) {
+      var avail = pointsAvail(state.level);
+      var alloc = state.points.hp + state.points.atk + state.points.def;
+      var d = parseInt(t.dataset.d, 10);
+      var k = t.dataset.key;
+      if (d > 0) state.points[k] += Math.min(d, Math.max(0, avail - alloc));
+      else if (d < 0) state.points[k] = Math.max(0, state.points[k] + d);
+      updateAll();
+    }
+  });
+
+  ROOT.addEventListener("input", function (e) {
+    var t = e.target;
+    if (t.id === "np-level") { state.level = parseInt(t.value, 10); updateAll(); return; }
+    if (t.id === "np-rv-level") { rv.level = Math.max(1, Math.min(99, Math.round(Number(t.value) || 1))); rvAnalyzed = false; rvUpdate(); persist(); return; }
+    if (t.classList.contains("np-gear-lv")) {
+      var g = state.gear[t.dataset.slot];
+      if (g.item) { g.lv = parseInt(t.value, 10); updateAll(); }
+    }
+  });
+
+  ROOT.addEventListener("change", function (e) {
+    var t = e.target;
+    if (t.id === "np-rv-rarity" || t.id === "np-rv-result") {
+      if (t.id === "np-rv-rarity") rv.rarity = t.value; else rv.result = t.value;
+      rvAnalyzed = false;
+      rvUpdate(); persist(); return;
+    }
+    if (t.classList.contains("np-gear-sel")) {
+      var g = state.gear[t.dataset.slot];
+      g.item = t.value;
+      g.lv = g.item ? g.lv : 0;
+      updateAll();
+    }
+  });
+
+  /* ---------- 战报反推器 ---------- */
+
+  var rv = { rarity: "epic", level: 30, result: "none", a: [], d: [], events: [] };
+  var RV_TYPES = { normal: "普", crit: "暴", extra: "追" };
+  var RV_EVENT_CATS = [
+    { id: "gearT", label: "装备·本回合失效", note: "失效回合伤害变低：多种普伤时，较小的值更接近失效回合" },
+    { id: "gearF", label: "装备·全场失效", note: "失效后每回合都变低：较小的普伤更接近失效状态" },
+    { id: "agi", label: "敏捷/先手", note: "只影响出手顺序，不影响伤害数值推断" },
+    { id: "heal", label: "治疗", note: "治疗恢复 5% 最大生命：生命估计与 HP 自检可能因此偏差" },
+    { id: "eva", label: "闪避", note: "闪避回合没有伤害记录，回合数会缺失" },
+    { id: "co", label: "协力", note: "协力追加 30% 伤害：≈30% 的追打应归因于协力而非鱼骨刺" },
+    { id: "guard", label: "代挡", note: "代挡减免本回合首次受击（≤15% 最大生命）：被代挡的那击偏低" }
+  ];
+  var rvAnalyzed = false;
+
+  function rvMostFreq(vals) {
+    var counts = {}, best = vals[0], bestN = 0;
+    vals.forEach(function (v) { counts[v] = (counts[v] || 0) + 1; });
+    Object.keys(counts).forEach(function (v) {
+      if (counts[v] > bestN) { best = Number(v); bestN = counts[v]; }
+    });
+    return { v: best, distinct: Object.keys(counts).length };
+  }
+
+  function rvRow(k, v, bad) {
+    return '<div class="np-rv-line' + (bad ? " np-rv-bad" : "") + '"><span class="np-rv-k">' + k + '</span><span class="np-rv-v">' + v + '</span></div>';
+  }
+
+  function rvRenderChips(list, elId, key) {
+    var el = document.getElementById(elId);
+    if (!list.length) { el.innerHTML = '<span class="np-small np-muted">暂无记录</span>'; return; }
+    el.innerHTML = list.map(function (it, i) {
+      return '<button type="button" class="np-btn np-btn-xs np-rv-del" data-rvkey="' + key + '" data-rvidx="' + i + '" aria-label="删除' + RV_TYPES[it.t] + it.v + '">' + it.v + "·" + RV_TYPES[it.t] + " ×</button>";
+    }).join("");
+  }
+
+  function rvRenderEvents() {
+    document.getElementById("np-rv-events").innerHTML = RV_EVENT_CATS.map(function (c) {
+      return '<button type="button" class="np-btn np-btn-xs" data-rvevent="' + c.id + '" aria-pressed="' + (rv.events.indexOf(c.id) >= 0) + '" data-tooltip="' + c.note + '">' + c.label + '</button>';
+    }).join("");
+  }
+
+  function rvEventNotes() {
+    return RV_EVENT_CATS.filter(function (c) { return rv.events.indexOf(c.id) >= 0; });
+  }
+
+  function rvUpdate() {
+    rvRenderChips(rv.a, "np-rv-a-list", "a");
+    rvRenderChips(rv.d, "np-rv-d-list", "d");
+    rvRenderEvents();
+    document.getElementById("np-rv-rarity").value = rv.rarity;
+    var lvlEl = document.getElementById("np-rv-level");
+    if (document.activeElement !== lvlEl) lvlEl.value = rv.level;
+    document.getElementById("np-rv-result").value = rv.result;
+    document.getElementById("np-rv-out").innerHTML = rvAnalyzed
+      ? rvComputeRows()
+      : '<div class="np-small np-muted">录好伤害（普通必填，暴击/追打可选）、勾选本场插曲后，点「开始分析」生成推断。</div>';
+  }
+
+  function rvAnalyze() { rvAnalyzed = true; rvUpdate(); }
+
+  function rvComputeRows() {
+    var me = statsOf(state, null);
+    var rb = RARITIES[rv.rarity];
+    var L = Math.max(1, Math.min(99, rv.level | 0));
+    var avail = (L - 1) * 3;
+    var rows = [];
+    rows.push(rvRow("我方攻 / 防（当前配装）", me.atk + " / " + me.def));
+
+    var fMe = 1 - me.def / (me.def + 80);
+    var normA = rv.a.filter(function (x) { return x.t === "normal"; });
+    var critA = rv.a.filter(function (x) { return x.t === "crit"; });
+    var normD = rv.d.filter(function (x) { return x.t === "normal"; });
+
+    var ao = null;
+    if (normA.length) {
+      var mfA = rvMostFreq(normA.map(function (x) { return x.v; }));
+      ao = mfA.v / fMe;
+      rows.push(rvRow("对方攻击（由普通伤害 " + mfA.v + " 反推）", "≈ " + Math.round(ao) + (mfA.distinct > 1 ? "（有 " + mfA.distinct + " 种普伤，取出现最多的）" : "")));
+    }
+
+    if (critA.length && normA.length) {
+      var baseNA = rvMostFreq(normA.map(function (x) { return x.v; })).v;
+      var avgRatio = critA.reduce(function (s, x) { return s + x.v / baseNA - 1; }, 0) / critA.length;
+      var pctv = avgRatio * 100;
+      var opts = [];
+      var lvC = (pctv - rb.critDmg / 100 - 5) / 1.7;
+      var lvE = (pctv - rb.critDmg / 100 - 8) / 2.13;
+      if (lvC >= -0.5 && lvC <= 10.5) opts.push("四叶猫铃 Lv." + Math.max(0, Math.min(10, Math.round(lvC))));
+      if (lvE >= -0.5 && lvE <= 10.5) opts.push("恶魔眼 Lv." + Math.max(0, Math.min(10, Math.round(lvE))));
+      rows.push(rvRow("对方暴伤（" + critA.length + " 条暴击）", "≈ +" + pctv.toFixed(1) + "%" + (opts.length ? "（" + rb.label + "基础 +" + (rb.critDmg / 100) + "% → 可能是 " + opts.join(" 或 ") + "）" : "（超出单件喵饰范围）")));
+    }
+
+    if (rv.a.some(function (x) { return x.t === "extra"; })) {
+      var fish = 0, co = 0, ratios = [];
+      rv.a.forEach(function (x, i) {
+        if (x.t !== "extra") return;
+        for (var j = i - 1; j >= 0; j--) {
+          if (rv.a[j].t === "extra") continue;
+          var r = x.v / rv.a[j].v;
+          ratios.push((r * 100).toFixed(0) + "%");
+          if (r >= 0.235 && r <= 0.265) fish++;
+          else if (r >= 0.285 && r <= 0.315) co++;
+          break;
+        }
+      });
+      var msg;
+      if (fish > 0) msg = fish + " 条 ≈ 前击 25% → 大概率带鱼骨刺";
+      else if (co > 0) msg = co + " 条 ≈ 前击 30% → 更像协力插曲（无鱼骨刺迹象）";
+      else msg = "比值 " + ratios.join("、") + "（不像 25%/30%，检查记录顺序）";
+      rows.push(rvRow("追打检测", msg));
+    } else if (normA.length >= 4 && rv.events.indexOf("co") < 0 && rv.events.indexOf("eva") < 0) {
+      rows.push(rvRow("追打检测", normA.length + " 次受击均无追打 → 大概率没有鱼骨刺"));
+    }
+
+    var dLo = null, dHi = null;
+    if (normD.length) {
+      var mfD = rvMostFreq(normD.map(function (x) { return x.v; }));
+      if (mfD.v >= me.atk + 0.5) {
+        rows.push(rvRow("对方防御", "我方普伤 ≥ 我方攻击，数值有误", true));
+      } else {
+        var rLo = (mfD.v - 0.5) / me.atk, rHi = (mfD.v + 0.5) / me.atk;
+        dHi = Math.floor(80 * (1 - rLo) / rLo);
+        dLo = Math.max(0, Math.ceil(80 * (1 - rHi) / rHi));
+        rows.push(rvRow("对方防御（由我方普伤 " + mfD.v + " 反推）", dLo + " ~ " + dHi + (mfD.distinct > 1 ? "（多种普伤，取出现最多的）" : "")));
+      }
+    }
+
+    var minPts = 0;
+    var feas = [];
+    if (ao !== null) {
+      var aoR = Math.round(ao);
+      var minA = Math.max(0, aoR - rb.atk - 12);
+      feas.push("攻击 " + aoR + " = 基础" + rb.atk + "+装备≤12+点数≥" + minA);
+      minPts += minA;
+    }
+    if (dLo !== null) {
+      var minD = Math.max(0, dLo - rb.def - 13);
+      feas.push("防御 ≥" + dLo + " = 基础" + rb.def + "+装备≤13+点数≥" + minD);
+      minPts += minD;
+    }
+    if (rv.result === "oppDead" && rv.d.length) {
+      var total = rv.d.reduce(function (s, x) { return s + x.v; }, 0);
+      var last = rv.d[rv.d.length - 1].v;
+      var hpLo = total - last + 1, hpHi = total;
+      rows.push(rvRow("对方生命（被最后一击 " + last + " 击倒）", hpLo + " ~ " + hpHi + "（" + rb.label + "基础 " + rb.hp + "）" + (rv.events.indexOf("heal") >= 0 ? "·含治疗，实际更高" : "")));
+      if (hpHi < rb.hp) {
+        rows.push(rvRow("对方生命", "低于 " + rb.label + " 基础生命，输入可能有误", true));
+      } else {
+        var pHpLo = Math.max(0, Math.ceil((hpLo - rb.hp) / 5));
+        feas.push("生命 ≥" + hpLo + " = 基础" + rb.hp + "+5×点数≥" + pHpLo);
+        minPts += pHpLo;
+      }
+    }
+    if (rv.result === "meDead" && rv.a.length) {
+      var totalMe = rv.a.reduce(function (s, x) { return s + x.v; }, 0);
+      var lastMe = rv.a[rv.a.length - 1].v;
+      var okMe = me.hp > totalMe - lastMe && me.hp <= totalMe;
+      rows.push(rvRow("自检：你的实际 HP " + me.hp, "应在 " + (totalMe - lastMe + 1) + " ~ " + totalMe + " 之间" + (okMe ? " ✓" : "（不符 = 没录全、有治疗或漏记）"), !okMe));
+    }
+
+    if (ao !== null || dLo !== null) {
+      var okF = minPts <= avail;
+      rows.push(rvRow("点数可行性（Lv." + L + " 共 " + avail + " 点）",
+        (feas.length ? feas.join("；") + " ｜ " : "") + (okF ? "✓ 成立" + (minPts === 0 ? "（基础+满级装备即可覆盖，无需点数）" : "，最少需 " + minPts + " 点") : "✗ 最少需 " + minPts + " 点 > 可用 " + avail + " 点，矛盾"),
+        !okF));
+    } else {
+      rows.push(rvRow("点数可行性", "先录入至少一条「普通」伤害"));
+    }
+
+    rvEventNotes().forEach(function (c) {
+      rows.push(rvRow("插曲「" + c.label + "」", c.note));
+    });
+
+    return rows.join("");
+  }
+
+  (function init() {
+    loadStore();
+    state.cat = store.cat;
+    state.rarity = catBySlug(state.cat).rarity;
+    var c = cfgOf(state.cat);
+    state.level = c.level;
+    state.points = c.points;
+    state.gear = c.gear;
+
+    document.getElementById("np-pts-rows").innerHTML = ptsRowsHtml();
+    document.getElementById("np-gear-rows").innerHTML = gearRowsHtml();
+    document.getElementById("np-rv-rarity").innerHTML = RARITY_ORDER.map(function (r) {
+      return '<option value="' + r + '">' + RARITIES[r].label + '</option>';
+    }).join("");
+    renderManuals();
+    updateAll();
+  })();
+})();
+</script>
