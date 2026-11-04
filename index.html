@@ -3,42 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>neko planner preview</title>
-<style>
-:root{
-  --background:#faf9f8; --foreground:#1f1d1a; --card:#ffffff; --card-foreground:#1f1d1a;
-  --muted:#efedea; --muted-foreground:#6f6a63; --primary:#3d3a35; --primary-foreground:#ffffff;
-  --border:#e2dfda; --accent:#f4f2ef; --accent-foreground:#1f1d1a;
-  --viz-series-1:#4f76a8; --destructive:#b3382e;
-}
-*{box-sizing:border-box}
-body{margin:0;background:var(--background);color:var(--foreground);
-  font:14px/1.5 system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
-#preview-wrap{max-width:980px;margin:0 auto;padding:24px 16px}
-h2{font-size:18px;margin:0 0 4px} h3{font-size:14px;margin:0 0 8px;display:flex;align-items:center;gap:6px}
-.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:4px;border:1px solid var(--border);
-  background:var(--card);color:var(--foreground);border-radius:8px;padding:4px 12px;font:inherit;cursor:pointer}
-.btn[aria-pressed="true"]{background:var(--primary);color:var(--primary-foreground);border-color:var(--primary)}
-.btn-primary{background:var(--primary);color:var(--primary-foreground);border-color:var(--primary)}
-.btn-sm{padding:2px 10px}.btn-xs{padding:0 8px;min-height:22px}
-.viz-tile[aria-pressed="true"]{outline:2px solid var(--viz-series-1);outline-offset:1px}
-.form-label{font-size:13px;color:var(--muted-foreground)}
-.form-select{font:inherit;padding:4px 8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--foreground)}
-.form-range{width:100%;accent-color:var(--primary)}
-.table{width:100%;border-collapse:collapse}
-.table td{padding:5px 4px;border-bottom:1px solid var(--border)}
-.table tbody tr:last-child td{border-bottom:0}
-.table-sm td{padding:4px}
-.text-end{text-align:right}.text-center{text-align:center}
-.tabular-nums{font-variant-numeric:tabular-nums}
-.text-small{font-size:12px}.text-muted{color:var(--muted-foreground)}
-.viz-badge{display:inline-block;font-size:11px;padding:1px 8px;border-radius:99px;background:var(--accent);color:var(--accent-foreground);border:1px solid var(--border)}
-svg.lucide{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
-</style>
+<title>我的喵 · 配装模拟器 — FUUN.FUN 守站工具</title>
+<meta name="description" content="FUUN.FUN《我的喵》守站小游戏工具：40 只猫全数据配装模拟、装备强化成本、加点收益分析与战报反推。">
+<style>html{background:#F7EFDC}body{margin:0;padding:14px;background:#F7EFDC}</style>
 </head>
 <body>
-<div id="preview-wrap">
 <div id="neko-planner">
   <h2 class="np-title">我的喵 · 配装模拟器</h2>
   <p class="np-small np-muted np-source">数据来自 fuun.fun 公开接口与前端源码（2026-10-29），数值以游戏内为准。每只猫的配装自动保存在本浏览器。</p>
@@ -111,6 +80,14 @@ svg.lucide{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;s
   <section class="np-card np-reverse" aria-label="战报反推器">
     <h3>战报反推器</h3>
     <div class="np-small np-muted">从对战报告抄数字进来，逐条添加并标类型，点「开始分析」推对方大概的属性。我方攻/防自动取自上方当前配装。普通伤害必填（同场应相同，多种 = 有插曲，取出现最多的）；暴击/追打可选，没有会自动跳过。选了战斗结果时，需要录入全场全部伤害，生命估计与自检才准确。</div>
+    <div class="np-rv-paste">
+      <div class="np-ctl-row">
+        <input type="text" class="np-input" id="np-rv-myname" placeholder="我的名字（玩家名或猫名，如 Symbol）" style="flex:1 1 16em" aria-label="我的名字">
+        <button type="button" class="np-btn np-btn-sm np-btn-primary" id="np-rv-parse">解析粘贴的战报</button>
+      </div>
+      <textarea class="np-input np-rv-text" id="np-rv-text" rows="5" placeholder="整段粘贴对战报告：含【名字】、造成 X 点伤害、暴击！、追打、战斗结束…等行，解析后自动填入下方记录并生成推断。" aria-label="对战报告文本"></textarea>
+      <div class="np-small np-muted" id="np-rv-parse-status"></div>
+    </div>
     <div class="np-ctl-row" style="margin-top:8px">
       <span class="np-label" id="np-rv-rarity-label">对方稀有度</span>
       <select class="np-select np-sel-inline" id="np-rv-rarity" aria-labelledby="np-rv-rarity-label"></select>
@@ -174,7 +151,7 @@ svg.lucide{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;s
       </div>
       <div class="np-guide-item">
         <strong>3. FUN 花钱顺序：买齐 4 件装备 → 强化暴伤件 → 防装 → 最后武器。</strong>
-        <span class="np-small np-muted">买装备基础属性只要 30~75 FUN/点；暴击/暴伤/闪避/敏捷没有点数来源、只能靠装备，强化里暴伤件性价比最高；攻击强化最贵、放最后。</span>
+        <span class="np-small np-muted">买装备基础属性只要 30~75 FUN/点。暴伤/闪避/敏捷没有点数来源、只能靠装备；暴击率主要靠升级白送（+0.3%/级，Lv.30 即 +8.7%），装备是补充。强化里暴伤件性价比最高；攻击强化最贵、放最后。</span>
       </div>
     </div>
     <table class="np-table" style="margin-top:8px">
@@ -196,6 +173,13 @@ svg.lucide{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;s
     </table>
     <div class="np-small np-muted" style="margin-top:6px">推荐节奏：每级 3 点按「2 攻 1 血」循环；被秒就临时多补血，打不动高防就全攻。暴击率由等级白送（+0.3%/级）无需投入。以上为期望值分析，未计暴击/闪避/插曲随机性。</div>
   </section>
+
+  <footer class="np-footer">
+    <a href="https://fuun.fun" target="_blank" rel="noopener noreferrer" class="np-fuun-badge">
+      <img src="https://pic1.imgdb.cn/i/0341I88YnpkSEo9lQrPJew.svg" alt="Featured on Fuun.fun" loading="lazy">
+    </a>
+    <span class="np-small np-muted" id="np-visits"></span>
+  </footer>
 </div>
 
 <style>
@@ -283,6 +267,10 @@ svg.lucide{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;s
 #neko-planner .np-guide{max-width:1024px;margin:0 auto;width:100%}
 #neko-planner .np-guide-item{display:flex;flex-direction:column;gap:2px;padding:6px 0;border-bottom:1px dashed var(--np-border-soft)}
 #neko-planner .np-guide-item:last-child{border-bottom:0}
+#neko-planner .np-footer{display:flex;align-items:center;justify-content:center;gap:14px;max-width:1024px;margin:0 auto;width:100%}
+#neko-planner .np-footer img{height:26px;display:block}
+#neko-planner .np-rv-paste{margin-top:10px;display:flex;flex-direction:column;gap:8px}
+#neko-planner .np-rv-text{width:100%;min-height:110px;resize:vertical;line-height:1.5;font-family:inherit}
 @media (max-width:760px){
   #neko-planner{padding:14px}
   #neko-planner .np-grid{grid-template-columns:1fr}
@@ -692,6 +680,7 @@ svg.lucide{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;s
     }
     if (t.dataset.cat) { if (t.dataset.cat !== state.cat) switchCat(t.dataset.cat); return; }
     if (t.id === "np-wash") { state.points = { hp: 0, atk: 0, def: 0 }; updateAll(); return; }
+    if (t.id === "np-rv-parse") { rvParseReport(); return; }
     if (t.id === "np-rv-run") { rvAnalyze(); return; }
     if (t.id === "np-rv-a-add" || t.id === "np-rv-d-add") {
       var isA = t.id === "np-rv-a-add";
@@ -815,6 +804,75 @@ svg.lucide{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;s
   }
 
   function rvAnalyze() { rvAnalyzed = true; rvUpdate(); }
+
+  function rvParseReport() {
+    var nameEl = document.getElementById("np-rv-myname");
+    var textEl = document.getElementById("np-rv-text");
+    var statusEl = document.getElementById("np-rv-parse-status");
+    var text = textEl.value || "";
+    if (!text.trim()) { statusEl.textContent = "请先在上方粘贴完整对战报告文本。"; return; }
+
+    var mine = (nameEl.value || "").trim();
+    if (!mine) {
+      var cn = catBySlug(state.cat).name;
+      if (text.indexOf(cn) >= 0) { mine = cn; nameEl.value = cn; }
+    }
+    function isMine(name) {
+      var n = name.toLowerCase(), m = mine.toLowerCase();
+      if (m && n.indexOf(m) >= 0) return true;
+      if (!m) return false;
+      var parts = n.split("·");
+      for (var i = 0; i < parts.length; i++) {
+        if (parts[i].length >= 2 && m.indexOf(parts[i]) >= 0) return true;
+      }
+      return false;
+    }
+    if (mine && text.toLowerCase().indexOf(mine.toLowerCase()) < 0) {
+      var found = false, m2 = mine.toLowerCase();
+      var allNames = text.match(/【([^】]+)】/g) || [];
+      for (var i = 0; i < allNames.length; i++) {
+        var parts = allNames[i].toLowerCase().split("·");
+        for (var j = 0; j < parts.length; j++) {
+          if (parts[j].length >= 2 && m2.indexOf(parts[j].replace(/[【】]/g, "")) >= 0) { found = true; break; }
+        }
+        if (found) break;
+      }
+      if (!found) { statusEl.textContent = "报告里找不到「" + mine + "」——填玩家名或猫名（见报告【】里 · 前后文字）。"; return; }
+    }
+
+    var a = [], d = [], winner = null, maxRound = 0, hits = 0;
+    var lines = text.split(/\r?\n/);
+    for (var li = 0; li < lines.length; li++) {
+      var ln = lines[li];
+      var m;
+      if ((m = ln.match(/【([^】]+)】追打，额外\s*(\d+)\s*点伤害/))) {
+        (isMine(m[1]) ? d : a).push({ v: parseInt(m[2], 10), t: "extra" }); hits++;
+      } else if ((m = ln.match(/暴击！【([^】]+)】对【([^】]+)】[^0-9]*(\d+)\s*点伤害/))) {
+        (isMine(m[1]) ? d : a).push({ v: parseInt(m[3], 10), t: "crit" }); hits++;
+      } else if ((m = ln.match(/【([^】]+)】攻击【([^】]+)】[^0-9]*(\d+)\s*点伤害/))) {
+        (isMine(m[1]) ? d : a).push({ v: parseInt(m[3], 10), t: "normal" }); hits++;
+      } else if ((m = ln.match(/战斗结束，【([^】]+)】获胜/))) {
+        winner = m[1];
+      }
+      var rm = ln.match(/第\s*(\d+)\s*回合/);
+      if (rm) maxRound = Math.max(maxRound, parseInt(rm[1], 10));
+    }
+
+    if (!hits) { statusEl.textContent = "没有解析到伤害数字：确认粘贴的是完整对战报告（含「造成 X 点伤害」行）。"; return; }
+    if (d.length === 0 && a.length > 0) { statusEl.textContent = "全部伤害都被归到对方——「我的名字」可能填错了。"; return; }
+    if (a.length === 0 && d.length > 0) { statusEl.textContent = "全部伤害都被归到自己——「我的名字」可能填错了。"; return; }
+
+    rv.a = a; rv.d = d;
+    if (winner) {
+      rv.result = (maxRound > 0 && maxRound < 25) ? (isMine(winner) ? "oppDead" : "meDead") : "none";
+    }
+    rvAnalyzed = false;
+    rvUpdate(); persist();
+    rvAnalyze();
+    statusEl.textContent = "解析成功：对方→我 " + a.length + " 条、我→对方 " + d.length + " 条" +
+      (winner ? "，胜者 " + winner + (maxRound ? "（第 " + maxRound + " 回合结束）" : "") : "") +
+      "；战斗结果已自动识别，可直接核对下方推断。";
+  }
 
   function rvComputeRows() {
     var me = statsOf(state, null);
@@ -949,9 +1007,35 @@ svg.lucide{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;s
     renderManuals();
     updateAll();
   })();
+
+  (function () {
+    var img = document.querySelector(".np-fuun-badge img");
+    if (img) img.addEventListener("error", function () {
+      var a = img.closest("a");
+      if (a) a.style.display = "none";
+    });
+  })();
+
+  (function () {
+    var el = document.getElementById("np-visits");
+    if (!el || typeof fetch !== "function") return;
+    function show(d) {
+      if (d && typeof d.value === "number") el.textContent = "访客 " + d.value;
+    }
+    try {
+      var counted = false;
+      try { counted = sessionStorage.getItem("np-counted") === "1"; } catch (e) {}
+      fetch("https://abacus.jasoncameron.dev/" + (counted ? "get" : "hit") + "/neko-planner/visits")
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          try { sessionStorage.setItem("np-counted", "1"); } catch (e) {}
+          show(d);
+        })
+        .catch(function () {});
+    } catch (e) {}
+  })();
 })();
 </script>
 
-</div>
 </body>
 </html>
